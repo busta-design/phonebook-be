@@ -1,5 +1,8 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using backend_phonebook.Context;
+using backend_phonebook.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,31 +14,108 @@ namespace backend_phonebook.Controllers
     [ApiController]
     public class ContactController : ControllerBase
     {
-        List<Contact> Contacts = new List<Contact>()
+        private readonly AppDBContext context;
+        public ContactController(AppDBContext context)
         {
-            new Contact(){Id=1, FirstName="Andres", LastName="Bustamante", Phone=78873788, RegistrationDate="13/06/2021"},
-            new Contact(){Id=2, FirstName="William", LastName="Pabon", Phone=65487851, RegistrationDate="14/06/2021"},
-            new Contact(){Id=3, FirstName="Grisel", LastName="Quispe", Phone=78956321, RegistrationDate="17/06/2021"}
-        };
+            this.context = context;
+        }
 
+        // GET: api/<controller>
         [HttpGet]
-        public ActionResult<Contact> Get(int Id)
+        public ActionResult Get()
         {
-            var contact = Contacts.Where(d => d.Id == Id).FirstOrDefault();
-            
-            if (contact == null) return NotFound();
-            return contact;
+            try
+            {
+                return Ok(context.gestor_bd.ToList());
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        // GET: api/<controller>/5
+        [HttpGet("{id}", Name = "GetGestor")]
+        public ActionResult Get(int id)
+        {
+            try
+            {
+                var gestor = context.gestor_bd.FirstOrDefault(g => g.id == id);
+                return Ok(gestor);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        // POST api/<controller>
+        [HttpPost]
+        public ActionResult Post([FromBody] Contact contact)
+        {
+            try
+            {
+                context.gestor_bd.Add(contact);
+                context.SaveChanges();
+                return CreatedAtRoute("GetGestor", new { id = contact.id }, contact);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+
+            }
+        }
+
+        // PUT api/<controller>
+        [HttpPut("{id}")]
+        public ActionResult Put(int id, [FromBody] Contact contact)
+        {
+            try
+            {
+                if (contact.id == id)
+                {
+                    context.Entry(contact).State = EntityState.Modified;
+                    context.SaveChanges();
+                    return CreatedAtRoute("GetGestor", new { id = contact.id }, contact);
+
+                }
+                return BadRequest();
+
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+
+            }
+        }
+
+        // DELETE api/<controller>/5
+        [HttpDelete("{id}")]
+        public ActionResult Delete(int id)
+        {
+            try
+            {
+                var gestor = context.gestor_bd.FirstOrDefault(g => g.id == id);
+
+                if (gestor != null)
+                {
+                    context.gestor_bd.Remove(gestor);
+                    context.SaveChanges();
+                    return Ok(id);
+
+                }
+                return BadRequest();
+
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+
+            }
         }
     }
 
-    public class Contact
-    {
-        public int Id { get; set; }
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
-        public int Phone { get; set; }
-        public string RegistrationDate { get; set; }
-    }
+
 
 
 }
